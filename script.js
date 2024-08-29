@@ -24,6 +24,75 @@ const Player = (name, mark) => {
   return { getName, getMark, getCells, addCell };
 };
 
+const displayController = (() => {
+  const board = document.getElementById("board");
+  const boardTop = document.getElementById("board-top");
+  const boardBot = document.getElementById("board-bot");
+
+  const printBoard = (pOne, pTwo) => {
+    board.textContent = "";
+    boardTop.textContent = "";
+    gameboard.getBoard().forEach((cell) => {
+      const div = document.createElement("div");
+      if (cell.value === null) {
+        div.textContent = "";
+      } else {
+        div.textContent = cell.value;
+      }
+      div.classList.add("cell");
+      div.addEventListener("click", () =>
+        gameController.playerMove(cell.position)
+      );
+      board.appendChild(div);
+    });
+    if (boardTop.textContent === "") {
+      const playerOneName = document.createElement("div");
+      playerOneName.textContent = `${pOne.getName()} (${pOne.getMark()})`
+      const playerTwoName = document.createElement("div");
+      playerTwoName.textContent = `${pTwo.getName()} (${pTwo.getMark()})`
+      boardTop.style = "justify-content: space-between;";
+      boardTop.appendChild(playerOneName);
+      boardTop.appendChild(playerTwoName);
+    }
+    if (boardBot.textContent === "") {
+      const resetBtn = document.createElement("button");
+      resetBtn.textContent = "Reset";
+      resetBtn.id = "reset-btn";
+      resetBtn.addEventListener("click", () => gameController.startNewGame());
+      boardBot.appendChild(resetBtn);
+    }
+  };
+
+  const printWinner = (winComb, winner) => {
+    board.textContent = "";
+    boardTop.textContent = "";
+
+    const winMessage = document.createElement("div");
+    winMessage.textContent = `${winner} Wins!`;
+    boardTop.style = "justify-content: center;";
+    boardTop.appendChild(winMessage);
+
+    gameboard.getBoard().forEach((cell, index) => {
+      const div = document.createElement("div");
+      div.style = "pointer-events: none;";
+      div.textContent = cell.value;
+      if (winComb.includes(index)) {
+        div.classList.add("win-cell");
+        div.classList.add("cell");
+      } else {
+        div.classList.add("cell");
+      }
+      div.addEventListener("click", () =>
+        gameController.playerMove(cell.position)
+      );
+
+      board.appendChild(div);
+    });
+  };
+
+  return { printBoard, printWinner };
+})();
+
 const gameController = (() => {
   let playerOne;
   let playerTwo;
@@ -43,10 +112,11 @@ const gameController = (() => {
 
   const startNewGame = () => {
     gameboard.generate();
-    playerOne = Player("One", "X");
-    playerTwo = Player("Two", "O");
+    playerOne = Player("Player One", "X");
+    playerTwo = Player("Player Two", "O");
     currentPlayer = playerOne;
     result = null;
+    displayController.printBoard(playerOne, playerTwo);
   };
 
   const checkWinner = () => {
@@ -74,7 +144,7 @@ const gameController = (() => {
       ? (currentPlayer = playerTwo)
       : (currentPlayer = playerOne);
 
-  const isValid = (cell) => cell < 9 && gameboard.getCell(cell).value === null;
+  const isValid = (cell) => gameboard.getCell(cell).value === null;
 
   const playerMove = (cell) => {
     if (isValid(cell)) {
@@ -82,10 +152,10 @@ const gameController = (() => {
       currentPlayer.addCell(cell);
       result = checkWinner();
       if (result.hasWinner) {
-        console.log(`Winner: ${result.winner} : ${result.combination}`);
-        startNewGame();
+        displayController.printWinner(result.combination, result.winner);
         return;
       }
+      displayController.printBoard(playerOne, playerTwo);
       changeCurrentPlayer();
     }
   };
